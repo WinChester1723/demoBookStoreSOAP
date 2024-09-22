@@ -20,7 +20,7 @@ builder.Services.AddDbContext<BookContext>(options =>
 options.UseSqlite("Data Source=books.db"));
 
 // Setting up a connection to ElasticSearch
-var elasticSettings = new ConnectionSettings(new Uri("http://localhost:9200"))
+var elasticSettings = new ConnectionSettings(new Uri("http://elasticsearch_bookstore:9200"))
         .DefaultIndex("books"); // my index name
 
 var elasticClient = new ElasticClient(elasticSettings);
@@ -29,6 +29,12 @@ builder.Services.AddSingleton<IElasticClient>(elasticClient);
 builder.Services.AddMvc().AddControllersAsServices();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+        var dbContext = scope.ServiceProvider.GetRequiredService<BookContext>();
+        dbContext.Database.Migrate();
+}
 
 app.UseRouting();
 

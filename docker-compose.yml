@@ -1,0 +1,38 @@
+  version: '3.8'
+
+  services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.22
+      container_name: elasticsearch_bookstore
+      environment:
+        - discovery.type=single-node
+        - xpack.security.enabled=false
+      ports:
+        - "9201:9200"
+      networks:
+        - booknetwork
+      healthcheck:
+        test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+        
+    bookstore:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      container_name: bookstore-soap-service
+      depends_on:
+        elasticsearch:
+          condition: service_healthy
+      ports:
+        - "8080:80"
+      networks:
+        - booknetwork
+      environment:
+        - ASPNETCORE_URLS=http://+:80
+        - ElasticSearch__Uri=http://elasticsearch:9200
+
+  networks:
+    booknetwork:
+      driver: bridge
