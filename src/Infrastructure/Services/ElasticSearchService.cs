@@ -54,20 +54,25 @@ namespace Infrastructure.Services
 
         public async Task<List<Book>> SearchBooks(string query)
         {
+            Console.WriteLine($"Executing search with query: {query}");
+
             var searchResponse = await _elasticClient.SearchAsync<Book>(s => s
+                .Index("books")
                 .Query(q => q
                     .MultiMatch(m => m
                         .Fields(f => f
                             .Field(ff => ff.Title)
                             .Field(ff => ff.Author)
-                            .Field(ff => ff.Year))
+                            )
                         .Query(query)
                     )
                 )
+                .Size(30)
             );
 
             if (!searchResponse.IsValid)
             {
+                Console.WriteLine($"Error: {searchResponse.ServerError?.Error.Reason}");
                 throw new InvalidOperationException($"Error during search operation: {searchResponse.ServerError?.Error.Reason}");
             }
 
